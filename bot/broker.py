@@ -90,7 +90,7 @@ class Broker (object):
         self.update_order_status(True)
         self.status_queue.put(self.position)
 
-    def process_entry (self, action):
+    def process_entry(self, action):
         aid = action['id']
         long_ = action['long']
         qty = action.get('qty')
@@ -99,9 +99,7 @@ class Broker (object):
         if not long_:
             qty = -qty
 
-        # TODO pyramiding
-        cur_pos = self.positions.get(aid, None)
-        if cur_pos:
+        if cur_pos := self.positions.get(aid, None):
             order_qty = qty - cur_pos['qty']
         else:
             # Clear all positions
@@ -111,9 +109,7 @@ class Broker (object):
         notify_order(logger, f'entry({aid}): qty={qty}, cur={self.position}, order_qty={order_qty}')
 
         if order_qty:
-            o = self.market.create_order(order_qty)
-            # Apply position
-            if o:
+            if o := self.market.create_order(order_qty):
                 self.immediate_orders[o['id']] = o
                 self.positions = dict(aid=dict(order=o, qty=qty))
 

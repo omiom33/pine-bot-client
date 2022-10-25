@@ -14,15 +14,19 @@ if version[0] != 3 or version[1] < 6:
 try:
     import ccxt
 except ImportError:
-    print(f"*** CCXT is not found!! ***")
+    print("*** CCXT is not found!! ***")
     sys.exit(1)
 CCXT_VERSION = 'builtin'
 if not os.path.exists('ccxt'):
     CCXT_VERSION = 'unknown'
     try:
         import pip
-        ccxt = list(filter(lambda pkg: pkg.key == 'ccxt', pip.get_installed_distributions()))
-        if ccxt:
+        if ccxt := list(
+            filter(
+                lambda pkg: pkg.key == 'ccxt',
+                pip.get_installed_distributions(),
+            )
+        ):
             ccxt = ccxt[0]
             CCXT_VERSION = ccxt.version
             ver = [int(n) for n in ccxt.version.split('.')]
@@ -76,7 +80,7 @@ def do_help ():
 class CommandLineError (Exception):
     pass
 
-def handle_command_line ():
+def handle_command_line():
     argc = len(sys.argv)
     if argc < 2:
         raise CommandLineError("missing <command>. ('help' to show usge)")
@@ -84,7 +88,7 @@ def handle_command_line ():
     # command
     command = sys.argv[1]
     if command not in ('run', 'init', 'help', 'support'):
-        raise CommandLineError("invalid command: {}".format(command))
+        raise CommandLineError(f"invalid command: {command}")
     if command == 'help':
         return (command, None, None, None)
     if command == 'support':
@@ -104,8 +108,8 @@ def handle_command_line ():
         with open(pine_fname) as f:
             pine_str = f.read()
     except Exception as e:
-        raise CommandLineError("fail to read pine script: {}".format(e)) from e
-    
+        raise CommandLineError(f"fail to read pine script: {e}") from e
+
     # explicit configuration
     params = None
     if argc > 3:
@@ -127,7 +131,7 @@ if __name__ == '__main__':
         command, *args = handle_command_line()
     except CommandLineError as e:
         logger.error(e)
-        logger.info('Type `python {} help` for usage'.format(sys.argv[0]))
+        logger.info(f'Type `python {sys.argv[0]} help` for usage')
         sys.exit(1)
 
     if command == 'help':

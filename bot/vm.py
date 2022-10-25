@@ -14,7 +14,7 @@ class VMIsPurged (Exception):
 
 class BotVM (object):
 
-    def __init__ (self, params, ident, market):
+    def __init__(self, params, ident, market):
         self.params = params
         self.ident = ident
         self.market = market
@@ -26,8 +26,7 @@ class BotVM (object):
 
         self.hb_interval_base = 300
         self.hb_interval_variance = 0.2
-        bot_params = params.get('bot', None)
-        if bot_params:
+        if bot_params := params.get('bot', None):
             self.hb_interval_base = bot_params.get('hb_interval', self.hb_interval_base)
             self.hb_interval_variance = bot_params.get('hb_interval_variance', self.hb_interval_variance)
         self.initialize_hb_range()
@@ -72,24 +71,22 @@ class BotVM (object):
         self.update_jitter(res['server_clock'])
         return res
 
-    def boot (self):
+    def boot(self):
         self.ohlcv = self.market.load_ohlcv(self.now())
         res = call_api(self.params, '/boot-vm',
                         vmid=self.ident, ohlcv=self.ohlcv)
-        error = res.get('error', None)
-        if error:
+        if error := res.get('error', None):
             raise Exception(f'fail to boot VM: {error}')
         self.update_jitter(res['server_clock'])
 
-    def run_forever (self):
+    def run_forever(self):
         while True:
             # Try to step VM by 1tick
             try:
                 self.wait_till_next()
                 logger.debug(f'wakeup! {self.current_clock}')
 
-                actions = self.trystep()
-                if actions:
+                if actions := self.trystep():
                     self.apply_actions(actions)
 
             except VMIsPurged:
@@ -118,10 +115,10 @@ class BotVM (object):
                 # HB
                 self.call_api('/touch-vm', vmid=self.ident)
 
-    def fetch_ohlcv (self, next_clock):
+    def fetch_ohlcv(self, next_clock):
         delay = 1.0
         ratio = 1.5
-        for i in range(5):
+        for _ in range(5):
             ohlcv = self.market.fetch_ohlcv(self.current_clock)
             self.update_ohlcv(ohlcv)
             # Return having new
@@ -129,8 +126,8 @@ class BotVM (object):
                 return True
             time.sleep(delay)
             delay *= ratio
-        # 
-        logger.warning(f'long delay in fetching OHLCV data')
+        #
+        logger.warning('long delay in fetching OHLCV data')
         time.sleep(60)
         return False
             

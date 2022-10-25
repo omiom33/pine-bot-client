@@ -47,7 +47,7 @@ class OHLCVProvider (BaseOHLCVProvider):
             v.append(row[5])
         return udf
 
-    def _load (self, resolution, f=None, t=None):
+    def _load(self, resolution, f=None, t=None):
         resolution_sec = resolution * 60
         if t is None:
             if f is None:
@@ -63,18 +63,18 @@ class OHLCVProvider (BaseOHLCVProvider):
         res = requests.get(url)
         if not res.ok:
             raise Exception(f'unexpected status code: {res}')
-        rows = res.json().get('result', None).get(str(resolution_sec), None)
-        if not rows:
+        if rows := res.json().get('result', None).get(str(resolution_sec), None):
+            return self.rows_to_udf(rows[-self.barcount:], resolution_sec)
+        else:
             raise Exception(f'invalid replied contents: {res.text}')
-        return self.rows_to_udf(rows[-self.barcount:], resolution_sec)
 
-    def load (self, resolution, timestamp=None):
+    def load(self, resolution, timestamp=None):
         import datetime
         ohlcv = self._load(resolution, None, timestamp)
-        logger.debug('lastbar={} l2={} o={} c={}'.format(
-            ohlcv['t'][-1], datetime.datetime.fromtimestamp(ohlcv['t'][-2]),
-            ohlcv['o'][-2], ohlcv['c'][-2]
-        ))
+        logger.debug(
+            f"lastbar={ohlcv['t'][-1]} l2={datetime.datetime.fromtimestamp(ohlcv['t'][-2])} o={ohlcv['o'][-2]} c={ohlcv['c'][-2]}"
+        )
+
         return ohlcv
 
     def fetch (self, resolution, timestamp):
@@ -89,16 +89,15 @@ def supports (exchange, pair):
 
 from collections import OrderedDict
 markets = OrderedDict()
-def initialize ():
+def initialize():
     try:
-        res = requests.get(API_SERVER_URL+'/markets')
+        res = requests.get(f'{API_SERVER_URL}/markets')
         for m in res.json(object_pairs_hook=OrderedDict)['result']:
             exchange = m['exchange']
             pair = m['pair']
             symbols = markets.setdefault(exchange, OrderedDict())
             symbols[pair] = pair
-            func = getattr(helper, f'init_{exchange}', None)
-            if func:
+            if func := getattr(helper, f'init_{exchange}', None):
                 func(symbols, pair)
     except Exception as e:
         raise CryptoWatchError(f'fail to fetch markets: {e}') from e

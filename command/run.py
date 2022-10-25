@@ -28,15 +28,13 @@ def _prepare_market (params):
     return get_market(exchange, symbol, resolution, params)
 
 
-def _install_vm (params, pine_str, market):
+def _install_vm(params, pine_str, market):
     res = call_api(params, '/install-vm',
                 code=pine_str, inputs=params['inputs'], market=market.info) 
-                
-    error = res.get('error', None)
-    if error:
+
+    if error := res.get('error', None):
         raise Exception(f'Fail to process Pine script: {error}')
-    markets = res.get('markets', [])
-    if markets:
+    if markets := res.get('markets', []):
         raise Exception('security() is not supported')
 
     vmid = res['vm']
@@ -48,14 +46,14 @@ def _install_vm (params, pine_str, market):
 
     return bot
 
-def do_run (params, pine_fname, pine_str):
+def do_run(params, pine_fname, pine_str):
 
     ## Prelude (dump info)
     logger.info(f"Pine script: {pine_fname}")
-    logger.info(f"[Parameters]")
+    logger.info("[Parameters]")
     for line in json.dumps(sanitize_parameters(params), indent=2).splitlines():
         logger.info(line)
-    
+
     # make market/exchange
     market = _prepare_market(params)
 
