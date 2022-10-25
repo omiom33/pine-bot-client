@@ -124,7 +124,7 @@ class CCXTOHLCVProvider (BaseOHLCVProvider):
 
 class Market (object):
 
-    def __init__ (self, exchange, symbol, resolution, options):
+    def __init__(self, exchange, symbol, resolution, options):
         self.exchange = exchange
         self.symbol_ = symbol
         self.market = exchange.markets[symbol.lower()]
@@ -134,10 +134,8 @@ class Market (object):
         # ohlcv provider
         self._initialize_ohlcv_provider()
         self.ohlcv_provider.set_resolution(self.resolution)
-        strategy = options.get('strategy', None)
-        if strategy:
-            max_bars_back = strategy.get('max_bars_back', None)
-            if max_bars_back:
+        if strategy := options.get('strategy', None):
+            if max_bars_back := strategy.get('max_bars_back', None):
                 self.ohlcv_provider.set_barcount(max_bars_back)
 
     @property
